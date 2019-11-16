@@ -49,7 +49,7 @@ def addBeam(beamState, labeling):
 		beamState.entries[labeling] = BeamEntry()
 
 
-def ctcBeamSearch(mat, classes, lm, beamWidth=25):
+def ctcBeamSearch(mat, classes, lm, beamWidth=2):
 	"beam search as described by the paper of Hwang et al. and the paper of Graves et al."
 
 	blankIdx = len(classes)
