@@ -1,55 +1,56 @@
-from __future__ import division
-from __future__ import print_function
-import codecs
-import re
+"""
+Created on Tue Nov 20 12:43:26 2019
+
+@author: miklos
+
+LanguageModel script:
+	Reads bigram dictionary from a json format
+"""
+
+import json
+import Create_bigramLM
 
 
 class LanguageModel:
 	"simple language model: word list for token passing, char bigrams for beam search"
 	def __init__(self, fn, classes):
-		"read text from file to generate language model"
-		self.initWordList(fn)
-		self.initCharBigrams(fn, classes)
+		"read json to generate language model"
+		self.initPhonemeBigrams(fn, classes)
 
-
-	def initWordList(self, fn):
-		"internal init of word list"
-		txt = open(fn).read().lower()
-		words = re.findall(r'\w+', txt)
-		self.words = list(filter(lambda x: x.isalpha(), words))
-
-
-	def initCharBigrams(self, fn, classes):
+	def initPhonemeBigrams(self, fn, classes):
 		"internal init of character bigrams"
+		
+		with open(fn) as json_file:
+			loaded_bigram = json.load(json_file)
 
 		# init bigrams with 0 values
-		self.bigram = {c: {d: 0 for d in classes} for c in classes}
+		self.bigram = loaded_bigram
 
-		# go through text and add each char bigram
-		txt = codecs.open(fn, 'r', 'utf8').read()
-		for i in range(len(txt)-1):
-			first = txt[i]
-			second = txt[i+1]
-
-			# ignore unknown chars
-			if first not in self.bigram or second not in self.bigram[first]:
-				continue
-
-			self.bigram[first][second] += 1
-
-
-	def getCharBigram(self, first, second):
-		"probability of seeing character 'first' next to 'second'"
+	def getPhonemeBigram(self, first, second):
+		"probability of seeing phoneme 'first' next to 'second'"
 		first = first if first else ' ' # map start to word beginning
 		second = second if second else ' ' # map end to word end
 
-		# number of bigrams starting with given char
+		# number of bigrams starting with given phoneme
 		numBigrams = sum(self.bigram[first].values())
 		if numBigrams == 0:
 			return 0
+		
 		return self.bigram[first][second] / numBigrams
 
 
-	def getWordList(self):
-		"get list of unique words"
-		return self.words
+if __name__ == '__main__':
+	
+	classes2 = Create_bigramLM.get_classes()
+	lm = LanguageModel('bigram.json', classes2)
+	c1 = ' '
+	c2 = 'AA'
+	lmFactor = 0.01 # influence of language model
+	bigramProb = lm.getPhonemeBigram(c1, c2) 	
+	bigramProb = bigramProb ** lmFactor
+	
+	expected = 0.013159808858996246
+	actual = lm.getPhonemeBigram(c1, c2)
+	print("Expected: {}".format(expected))
+	print("Actual: {}".format(actual))
+	print('OK' if expected == actual else 'ERROR')

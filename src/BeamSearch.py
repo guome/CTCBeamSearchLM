@@ -1,5 +1,11 @@
-from __future__ import division
-from __future__ import print_function
+"""
+Created on Tue Nov 20 16:50:43 2019
+
+@author: miklos
+
+Beam search
+"""
+
 import numpy as np
 
 
@@ -38,7 +44,7 @@ def applyLM(parentBeam, childBeam, classes, lm):
 		c1 = classes[parentBeam.labeling[-1] if parentBeam.labeling else classes.index(' ')] # first char
 		c2 = classes[childBeam.labeling[-1]] # second char
 		lmFactor = 0.01 # influence of language model
-		bigramProb = lm.getCharBigram(c1, c2) ** lmFactor # probability of seeing first and second char next to each other
+		bigramProb = lm.getPhonemeBigram(c1, c2) ** lmFactor # probability of seeing first and second char next to each other
 		childBeam.prText = parentBeam.prText * bigramProb # probability of char sequence
 		childBeam.lmApplied = True # only apply LM once per beam entry
 
@@ -49,7 +55,7 @@ def addBeam(beamState, labeling):
 		beamState.entries[labeling] = BeamEntry()
 
 
-def ctcBeamSearch(mat, classes, lm, beamWidth=2):
+def ctcBeamSearch(mat, classes, lm, beamWidth=25):
 	"beam search as described by the paper of Hwang et al. and the paper of Graves et al."
 
 	blankIdx = len(classes)
@@ -116,7 +122,7 @@ def ctcBeamSearch(mat, classes, lm, beamWidth=2):
 				applyLM(curr.entries[labeling], curr.entries[newLabeling], classes, lm)
 
 		# set new beam state
-		last = curr
+		last = curr		
 
 	# normalise LM scores according to beam-labeling-length
 	last.norm()
@@ -125,24 +131,25 @@ def ctcBeamSearch(mat, classes, lm, beamWidth=2):
 	bestLabeling = last.sort()[0] # get most probable labeling
 
 	# map labels to chars
-	res = ''
+	res = []
 	for l in bestLabeling:
-		res += classes[l]
+		res.append(classes[l])
 
 	return res
 
 
 def testBeamSearch():
 	"test decoder"
-	classes = 'ab'
-	mat = np.array([[0.4, 0, 0.6], [0.4, 0, 0.6]])
-	print('Test beam search')
-	expected = 'a'
-	actual = ctcBeamSearch(mat, classes, None)
-	print('Expected: "' + expected + '"')
-	print('Actual: "' + actual + '"')
-	print('OK' if expected == actual else 'ERROR')
+	
+	classes = ['AA', 'B', 'CH']
+	mat = np.array([[0.4, 0, 0.6, 0.2], [0.4, 0, 0.6, 0.2]])
 
+	print('Test beam search')
+	expected = ['CH']
+	actual = ctcBeamSearch(mat, classes, None)
+	print("Expected: {}".format(expected))
+	print("Actual: {}".format(actual))
+	print('OK' if expected == actual else 'ERROR')
 
 if __name__ == '__main__':
 	testBeamSearch()
